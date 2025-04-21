@@ -7,7 +7,7 @@ const Index = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/super-Admin/login" element={<LoginPage />} />
         <Route path="/admin/login" element={<LoginPage />} />
         {AdminRouter()}

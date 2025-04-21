@@ -1,12 +1,19 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useModal } from "../context/SetModal";
 import useTitle from "../hook/useTitle";
 import axios from "axios";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { SockJSContext } from "../webStocket/SocketProvider/sockProvider";
 
 const Contact = () => {
   const { setModal } = useModal();
+
   const [id, setID] = useState(2);
+  const { message, isConnected, clientRef } = useContext(SockJSContext);
+  console.log("🚀 ~ Contact ~ message:", message);
+  console.log("🚀 ~ Contact ~ isConnected:", isConnected);
+  const [notification, setNotification] = useState([]);
+  console.log("🚀 ~ Contact ~ notification:", notification);
   const [form, setForm] = useState({ name: "", email: "" });
   const fetchUsers = async (id) => {
     const response = await axios.get(
@@ -28,14 +35,6 @@ const Contact = () => {
     onSuccess: (data) => {
       alert("User created!");
     },
-    // onSuccess: (data) => {
-    //   console.log("✅ Success:", data);
-    //   alert("User created!");
-    // },
-    // onError: (error) => {
-    //   console.error("❌ Error:", error);
-    //   alert("Something went wrong.");
-    // },
   });
 
   const handleSubmit = (e) => {
@@ -46,7 +45,6 @@ const Contact = () => {
     queryKey: ["user", id],
     queryFn: () => fetchUsers(id),
   });
-  console.log("🚀 ~ Contact ~ data:", data);
 
   useTitle("contect");
 
@@ -60,11 +58,32 @@ const Contact = () => {
     );
   };
 
+  useEffect(() => {
+    const subscribeToDealer = () => {
+      if (clientRef?.current?.connected) {
+        clientRef.current.subscribe(
+          "/topic/notifications/DEALER",
+          (message) => {
+            const body = JSON.parse(message.body);
+            console.log("🚀 ~ Notification ~ body:", body);
+            setNotification((prev) => [...prev, body]);
+          }
+        );
+      } else {
+        console.warn("STOMP not connected yet!");
+      }
+    };
+
+    if (isConnected) {
+      subscribeToDealer();
+    }
+  }, [isConnected, clientRef]);
+
   return (
     <div>
       <button onClick={handleSetModal}>Add News</button>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: 300, margin: "0 auto" }}>
+      {/* <form onSubmit={handleSubmit} style={{ maxWidth: 300, margin: "0 auto" }}>
         <h3>Create User</h3>
         <input
           type="text"
@@ -84,8 +103,9 @@ const Contact = () => {
         />
         <button type="submit" disabled={tens.isLoading}>
           {tens.isLoading ? "Submitting..." : "Submit"}
-        </button>
-      </form>
+        </button> */}
+      {/* <button onClick={Notification()}>Get Message</button> */}
+      {/* </form> */}
     </div>
   );
 };
